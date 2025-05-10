@@ -1,72 +1,69 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
+
 <head>
   <meta charset="UTF-8">
   <title>Dashboard</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      padding: 20px;
-      background: #f3f3f3;
-    }
-    h1 {
-      color: #333;
-    }
-    button {
-      margin: 10px 5px 10px 0;
-      padding: 10px 20px;
-      cursor: pointer;
-    }
-    #log {
-      white-space: pre-wrap;
-      background: #222;
-      color: #0f0;
-      padding: 10px;
-      margin-top: 20px;
-      height: 400px;
-      overflow-y: scroll;
-      border-radius: 5px;
-    }
-  </style>
+  <link rel="stylesheet" href="/static/style.css">
 </head>
+
 <body>
-  <h1>Status do Servidor Minecraft</h1>
-  <p>Status: <span id="status">...</span></p>
-  <button onclick="refreshStatus()">Atualizar Status</button>
-  <button onclick="startServer()">Iniciar Servidor</button>
-  <button onclick="loadLog()">Ver Logs</button>
-  <div id="log">Clique em "Ver Logs" para carregar...</div>
+  <nav>
+    <a href="/dashboard">Dashboard</a>
+    <a href="/mods">Mods</a>
+    <a href="/teleport">Teleporte</a>
+  </nav>
+
+  <div class="container">
+    <h1>Status do Servidor</h1>
+    <p id="status">Verificando...</p>
+    <button onclick="refreshStatus()">Atualizar Status</button>
+    <button onclick="startServer()">Iniciar Servidor</button>
+    <button onclick="loadLog()">Atualizar Logs</button>
+
+    <h2>Log</h2>
+    <pre id="log"></pre>
+  </div>
 
   <script>
-    function refreshStatus() {
-      fetch("/api/server/status")
-        .then(res => res.json())
-        .then(data => {
-          document.getElementById("status").innerText = data.status;
-        });
+    async function refreshStatus() {
+      const res = await fetch("/api/server/status");
+      const data = await res.json();
+      document.getElementById("status").textContent = data.status === 'running' ? "Executando" : "Parado";
     }
 
-    function startServer() {
-      fetch("/api/server/start", { method: "POST" })
-        .then(res => res.json())
-        .then(data => {
-          alert(data.message || "Erro ao iniciar o servidor");
-          refreshStatus();
-        }).catch(err => {
-          console.error("Erro ao iniciar o servidor:", err);
-          alert("Erro ao iniciar o servidor");
-        });
+    async function startServer() {
+      const res = await fetch("/api/server/start", { method: "POST" });
+      const data = await res.json();
+      alert(data.message || data.error);
+      refreshStatus();
+      loadLog();
     }
 
-    function loadLog() {
-      fetch("/api/server/logs")
-        .then(res => res.json())
-        .then(data => {
-          document.getElementById("log").innerText = data.log || "Log vazio";
+    async function loadLog() {
+      const res = await fetch("/api/server/logs");
+      const data = await res.json();
+      const logContainer = document.getElementById("log");
+      logContainer.innerHTML = "";
+
+      if (data.log) {
+        const lines = data.log.split("\\n");
+        lines.forEach(line => {
+          const div = document.createElement("div");
+          div.textContent = line;
+          logContainer.appendChild(div);
         });
+      } else {
+        logContainer.textContent = "Log vazio ou indisponível.";
+      }
     }
 
-    window.onload = refreshStatus;
+    window.onload = () => {
+      refreshStatus();
+      loadLog();
+    };
   </script>
+
 </body>
+
 </html>

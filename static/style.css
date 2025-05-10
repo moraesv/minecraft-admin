@@ -1,0 +1,62 @@
+body {
+    font-family: sans-serif;
+    background: #f4f4f4;
+    padding: 2em;
+}
+
+.container {
+    background: white;
+    padding: 2em;
+    max-width: 600px;
+    margin: auto;
+    border-radius: 8px;
+    box-shadow: 0 0 10px #ccc;
+}
+
+input {
+    width: 100%;
+    padding: 0.5em;
+    margin: 0.5em 0 1em;
+}
+
+button {
+    padding: 0.6em 1.2em;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #0056b3;
+}
+
+
+#log {
+    white-space: pre-wrap;
+    background: #222;
+    color: #0f0;
+    padding: 10px;
+    margin-top: 20px;
+    height: 400px;
+    overflow-y: scroll;
+    border-radius: 5px;
+}
+
+nav {
+    background: #333;
+    padding: 0.5em 1em;
+    margin-bottom: 2em;
+}
+
+nav a {
+    color: white;
+    margin-right: 1em;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+nav a:hover {
+    text-decoration: underline;
+}

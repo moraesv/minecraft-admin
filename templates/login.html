@@ -1,17 +1,23 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
+
 <head>
+  <meta charset="UTF-8">
   <title>Login</title>
-  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/static/style.css">
 </head>
+
 <body>
-  <form class="container" onsubimit="login()">
-    <h2>Login</h2>
-    <input id="user" placeholder="Usuário" />
-    <input id="pass" type="password" placeholder="Senha" />
-    <button onclick="login()">Entrar</button>
-    <p id="msg" class="msg"></p>
-  </form>
+  <div class="container">
+    <h1>Login do Painel</h1>
+    <form method="POST" action="/login" onsubmit="login()">
+      <label for="user">Usuário:</label>
+      <input type="text" id="user" name="user" required>
+      <label for="pass">Senha:</label>
+      <input type="password" id="pass" name="pass" required>
+      <button type="submit">Entrar</button>
+    </form>
+  </div>
 
   <script>
     function login() {
@@ -32,4 +38,5 @@
     }
   </script>
 </body>
+
 </html>

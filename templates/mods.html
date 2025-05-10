@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Gerenciar Mods</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+  <nav>
+    <a href="/dashboard">Dashboard</a>
+    <a href="/mods">Mods</a>
+    <a href="/teleport">Teleporte</a>
+  </nav>
+
+  <div class="container">
+    <h1>Gerenciamento de Mods</h1>
+
+    <h2>Upload de Mod (.jar)</h2>
+    <input type="file" id="modFile">
+    <button onclick="uploadMod()">Enviar</button>
+
+    <h2>Lista de Mods Ativos</h2>
+    <ul id="modList"></ul>
+  </div>
+
+  <script>
+    async function loadMods() {
+      const res = await fetch("/api/mods");
+      const data = await res.json();
+      const list = document.getElementById("modList");
+      list.innerHTML = "";
+
+      data.mods.forEach(mod => {
+        const li = document.createElement("li");
+        li.textContent = mod + " ";
+
+        const btn = document.createElement("button");
+        btn.textContent = "Desativar";
+        btn.onclick = async () => {
+          const res = await fetch("/api/mods/disable", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mod: mod })
+          });
+          const data = await res.json();
+          alert(data.message || data.error);
+          loadMods();
+        };
+
+        li.appendChild(btn);
+        list.appendChild(li);
+      });
+    }
+
+    async function uploadMod() {
+      const fileInput = document.getElementById("modFile");
+      if (!fileInput.files.length) return alert("Selecione um arquivo.");
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+
+      const res = await fetch("/api/mods/upload", {
+        method: "POST",
+        body: formData
+      });
+      const data = await res.json();
+      alert(data.message || data.error);
+      loadMods();
+    }
+
+    window.onload = loadMods;
+  </script>
+</body>
+
+</html>

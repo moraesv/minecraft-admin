@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Teleporte de Jogadores</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+  <nav>
+    <a href="/dashboard">Dashboard</a>
+    <a href="/mods">Mods</a>
+    <a href="/teleport">Teleporte</a>
+  </nav>
+
+  <div class="container">
+    <h1>Comando de Teleporte</h1>
+
+    <form id="tpForm">
+      <label for="from">Jogador:</label>
+      <input type="text" id="from" name="from" required>
+
+      <label for="to">Destino:</label>
+      <input type="text" id="to" name="to" required>
+
+      <button type="submit">Teleportar</button>
+    </form>
+
+    <p id="result" style="margin-top: 1em;"></p>
+  </div>
+
+  <script>
+    document.getElementById("tpForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const from = document.getElementById("from").value;
+      const to = document.getElementById("to").value;
+
+      const response = await fetch("/api/command/tp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ from, to })
+      });
+
+      const data = await response.json();
+      const result = document.getElementById("result");
+
+      if (response.ok) {
+        result.textContent = data.message;
+        result.style.color = "green";
+      } else {
+        result.textContent = data.error || "Erro ao executar comando.";
+        result.style.color = "red";
+      }
+    });
+  </script>
+</body>
+
+</html>
