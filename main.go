@@ -85,7 +85,7 @@ func login(c *gin.Context) {
 	c.BindJSON(&creds)
 
 	if creds.Username == adminUser && creds.Password == adminPass {
-		c.SetCookie("token", "valid", 3600, "/", "", false, true)
+		c.SetCookie("token", "valid", 3600, "/", "", true, true)
 		c.JSON(http.StatusOK, gin.H{"success": true})
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"success": false})
