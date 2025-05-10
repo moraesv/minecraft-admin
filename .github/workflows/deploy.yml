@@ -1,0 +1,61 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Build
+        run: go build -o minecraft-panel
+
+      - name: Copy files via SSH
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_KEY }}
+          source: "minecraft-panel,templates,static"
+          target: "~/minecraft-panel-deploy-temp"
+
+      - name: Deploy and restart
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_KEY }}
+          script: |
+            # Stop old screen if exists
+            screen -S mcpanel -X quit || true
+
+            # Update files
+            rm -rf ~/minecraft-panel
+            mv ~/minecraft-panel-deploy-temp ~/minecraft-panel
+            chmod +x ~/minecraft-panel/minecraft-panel
+
+            # Create .env file
+            cat <<EOF > ~/minecraft-panel/.env
+            ADMIN_USER=${{ secrets.ADMIN_USER }}
+            ADMIN_PASS=${{ secrets.ADMIN_PASS }}
+            MINE_PATH=${{ secrets.MINE_PATH }}
+            JAVA_COMMAND=${{ secrets.JAVA_COMMAND }}
+            EOF
+
+            # Start new screen session
+            cd ~/minecraft-panel
+            screen -dmS mcpanel ./minecraft-panel
+
+            # Wait and check health
+            sleep 3
+            curl -f http://localhost:8080/login || (echo "Health check failed" && exit 1)
