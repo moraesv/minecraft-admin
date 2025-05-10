@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <form class="container" onsubimit="login()">
+    <h2>Login</h2>
+    <input id="user" placeholder="Usuário" />
+    <input id="pass" type="password" placeholder="Senha" />
+    <button onclick="login()">Entrar</button>
+    <p id="msg" class="msg"></p>
+  </form>
+
+  <script>
+    function login() {
+      fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: document.getElementById('user').value,
+          password: document.getElementById('pass').value
+        })
+      }).then(res => {
+        if (res.status === 200) {
+          window.location.href = '/dashboard'
+        } else {
+          document.getElementById('msg').textContent = 'Login inválido'
+        }
+      })
+    }
+  </script>
+</body>
+</html>
