@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -23,7 +23,7 @@ func main() {
 	godotenv.Load()
 	adminUser = os.Getenv("ADMIN_USER")
 	adminPass = os.Getenv("ADMIN_PASS")
-	minePath = os.Getenv("MINE_RPG_PATH")
+	minePath = os.Getenv("MINE_PATH")
 	javaCmd = os.Getenv("JAVA_COMMAND")
 
 	r := gin.Default()
@@ -136,6 +136,7 @@ func serverLogs(c *gin.Context) {
 	logPath := filepath.Join(minePath, "server.log")
 	content, err := os.ReadFile(logPath)
 	if err != nil {
+		log.Println("Erro ao ler o log:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Não foi possível ler o log"})
 		return
 	}
@@ -146,6 +147,7 @@ func listMods(c *gin.Context) {
 	modsDir := filepath.Join(minePath, "mods")
 	files, err := os.ReadDir(modsDir)
 	if err != nil {
+		log.Println("Erro ao ler a pasta mods:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao ler a pasta mods"})
 		return
 	}
@@ -163,6 +165,7 @@ func listMods(c *gin.Context) {
 func uploadMod(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {
+		log.Println("Erro ao obter o arquivo:", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Arquivo não fornecido"})
 		return
 	}
@@ -170,6 +173,7 @@ func uploadMod(c *gin.Context) {
 	savePath := filepath.Join(minePath, "mods", filepath.Base(file.Filename))
 	err = c.SaveUploadedFile(file, savePath)
 	if err != nil {
+		log.Println("Erro ao salvar o arquivo:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao salvar o arquivo"})
 		return
 	}
@@ -193,8 +197,7 @@ func disableMod(c *gin.Context) {
 
 	err := os.Rename(source, dest)
 	if err != nil {
-		fmt.Println(req)
-		fmt.Println(err)
+		log.Println("Erro ao mover o arquivo:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao mover o arquivo"})
 		return
 	}
