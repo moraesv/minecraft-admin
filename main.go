@@ -7,8 +7,10 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
 	"github.com/joho/godotenv"
 )
 
@@ -17,6 +19,7 @@ var (
 	adminPass string
 	minePath  string
 	javaCmd   string
+	jwtSecret []byte
 )
 
 func main() {
@@ -25,6 +28,7 @@ func main() {
 	adminPass = os.Getenv("ADMIN_PASS")
 	minePath = os.Getenv("MINE_PATH")
 	javaCmd = os.Getenv("JAVA_COMMAND")
+	jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
 	r := gin.Default()
 
@@ -39,33 +43,21 @@ func main() {
 	r.GET("/login", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "login.html", nil)
 	})
-
-	r.GET("/dashboard", func(c *gin.Context) {
-		token, _ := c.Cookie("token")
-		if token != "valid" {
-			c.Redirect(http.StatusFound, "/login")
-			return
-		}
+	r.GET("/dashboard", authRequired(), func(c *gin.Context) {
 		c.HTML(http.StatusOK, "dashboard.html", nil)
 	})
-	r.GET("/mods", func(c *gin.Context) {
-		token, _ := c.Cookie("token")
-		if token != "valid" {
-			c.Redirect(http.StatusFound, "/login")
-			return
-		}
+	r.GET("/mods", authRequired(), func(c *gin.Context) {
 		c.HTML(http.StatusOK, "mods.html", nil)
 	})
-	r.GET("/teleport", func(c *gin.Context) {
-		token, _ := c.Cookie("token")
-		if token != "valid" {
-			c.Redirect(http.StatusFound, "/login")
-			return
-		}
+	r.GET("/teleport", authRequired(), func(c *gin.Context) {
 		c.HTML(http.StatusOK, "teleport.html", nil)
+	})
+	r.GET("/logout", authRequired(), func(c *gin.Context) {
+		c.HTML(http.StatusOK, "logout.html", nil)
 	})
 
 	r.POST("/api/login", login)
+	r.POST("/api/logout", logout)
 	r.GET("/api/server/status", authMiddleware(), serverStatus)
 	r.POST("/api/server/start", authMiddleware(), serverStart)
 	r.GET("/api/server/logs", authMiddleware(), serverLogs)
@@ -82,23 +74,79 @@ func login(c *gin.Context) {
 		Username string `json:"username"`
 		Password string `json:"password"`
 	}
-	c.BindJSON(&creds)
+	if err := c.BindJSON(&creds); err != nil {
+		log.Println("Erro ao ler credenciais:", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Dados inválidos"})
+		return
+	}
 
 	if creds.Username == adminUser && creds.Password == adminPass {
-		c.SetCookie("token", "valid", 3600, "/", "", true, true)
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+			"username": creds.Username,
+			"exp":      time.Now().Add(time.Hour * 1).Unix(),
+		})
+
+		tokenString, err := token.SignedString(jwtSecret)
+		if err != nil {
+			log.Println("Erro ao gerar token:", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao gerar token"})
+			return
+		}
+
+		c.SetCookie("token", tokenString, 3600, "/", "", false, true)
 		c.JSON(http.StatusOK, gin.H{"success": true})
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"success": false})
 	}
 }
 
+func logout(c *gin.Context) {
+	c.SetCookie("token", "", -1, "/", "", false, true)
+	c.JSON(http.StatusOK, gin.H{"message": "Logout realizado com sucesso"})
+}
+
 func authMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		token, err := c.Cookie("token")
-		if err != nil || token != "valid" {
-			c.AbortWithStatus(http.StatusUnauthorized)
+		tokenString, err := c.Cookie("token")
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token não encontrado"})
 			return
 		}
+
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, jwt.ErrInvalidKeyType
+			}
+			return jwtSecret, nil
+		})
+
+		if err != nil || !token.Valid {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token inválido"})
+			return
+		}
+
+		c.Next()
+	}
+}
+
+func authRequired() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		tokenString, err := c.Cookie("token")
+		if err != nil {
+			c.Redirect(http.StatusFound, "/login")
+			c.Abort()
+			return
+		}
+
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			return jwtSecret, nil
+		})
+		if err != nil || !token.Valid {
+			c.Redirect(http.StatusFound, "/login")
+			c.Abort()
+			return
+		}
+
 		c.Next()
 	}
 }

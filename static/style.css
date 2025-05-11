@@ -46,8 +46,11 @@ button:hover {
 
 nav {
     background: #333;
-    padding: 0.5em 1em;
+    padding: 1em 2em;
+    max-width: 600px;
+    margin: auto;
     margin-bottom: 2em;
+    border-radius: 8px;
 }
 
 nav a {
@@ -57,6 +60,101 @@ nav a {
     font-weight: bold;
 }
 
+nav a.active {
+    color: #5f5f5f;
+}
+
 nav a:hover {
     text-decoration: underline;
+}
+
+#modList {
+    height: 400px;
+    overflow-y: scroll;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border-radius: 8px;
+}
+
+#modList li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid #ccc;
+    font-family: sans-serif;
+    font-size: 14px;
+    background-color: #f9f9f9;
+}
+
+#modList li:nth-child(odd) {
+    background-color: #f1f1f1;
+}
+
+#modList button {
+    padding: 6px 12px;
+    background-color: #e74c3c;
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+}
+
+#modList button:hover {
+    background-color: #c0392b;
+}
+
+
+.upload-container {
+    font-family: sans-serif;
+    margin: 20px 0;
+}
+
+.upload-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.upload-container input[type="file"] {
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: white;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.upload-container input[type="file"]::-webkit-file-upload-button {
+    background: #3498db;
+    border: none;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.upload-container input[type="file"]::file-selector-button {
+    background: #3498db;
+    border: none;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.upload-container button {
+    padding: 6px 14px;
+    background-color: #2ecc71;
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    width: 120px;
+}
+
+.upload-container button:hover {
+    background-color: #27ae60;
 }

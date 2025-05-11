@@ -10,16 +10,22 @@
 <body>
   <nav>
     <a href="/dashboard">Dashboard</a>
-    <a href="/mods">Mods</a>
+    <a href="/mods" class="active">Mods</a>
     <a href="/teleport">Teleporte</a>
+    <a href="/logout">Sair</a>
   </nav>
 
   <div class="container">
     <h1>Gerenciamento de Mods</h1>
 
-    <h2>Upload de Mod (.jar)</h2>
-    <input type="file" id="modFile">
-    <button onclick="uploadMod()">Enviar</button>
+    <div class="upload-container">
+      <label for="modFile" class="upload-label">Upload de Mod (.jar):</label>
+      <div class="upload-controls">
+        <input type="file" id="modFile">
+        <button onclick="uploadMod()">Enviar</button>
+      </div>
+    </div>
+
 
     <h2>Lista de Mods Ativos</h2>
     <ul id="modList"></ul>

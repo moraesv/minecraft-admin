@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Logout</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+  <nav>
+    <a href="/dashboard">Dashboard</a>
+    <a href="/mods">Mods</a>
+    <a href="/teleport">Teleporte</a>
+    <a href="/logout" class="active">Sair</a>
+  </nav>
+
+  <div class="container">
+    <h1>Saindo...</h1>
+  </div>
+
+  <script>
+    async function logout() {
+      await fetch("/api/logout", { method: "POST" })
+      window.location.href = '/login'
+    }
+
+    window.onload = logout;
+  </script>
+</body>
+
+</html>
