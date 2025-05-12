@@ -1,75 +1,81 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  </head>
 
-<head>
-  <meta charset="UTF-8">
-  <title>Dashboard</title>
-  <link rel="stylesheet" href="/static/style.css">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
+  <body>
+    <nav>
+      <a href="/dashboard" class="active">Dashboard</a>
+      <a href="/mods">Mods</a>
+      <a href="/teleport">Teleporte</a>
+      <a href="/logout">Sair</a>
+    </nav>
 
-<body>
-  <nav>
-    <a href="/dashboard" class="active">Dashboard</a>
-    <a href="/mods">Mods</a>
-    <a href="/teleport">Teleporte</a>
-    <a href="/logout">Sair</a>
-  </nav>
+    <div class="container">
+      <h1>Status do Servidor</h1>
+      <p id="status">Verificando...</p>
 
-  <div class="container">
-    <h1>Status do Servidor</h1>
-    <p id="status">Verificando...</p>
+      <div class="button-group">
+        <button onclick="refreshStatus()">Atualizar Status</button>
+        <button onclick="startServer()">Iniciar Servidor</button>
+        <button onclick="stopServer()">Desligar Servidor</button>
+        <button onclick="loadLog()">Atualizar Logs</button>
+      </div>
 
-    <div class="button-group">
-      <button onclick="refreshStatus()">Atualizar Status</button>
-      <button onclick="startServer()">Iniciar Servidor</button>
-      <button onclick="loadLog()">Atualizar Logs</button>
+      <h2>Log</h2>
+      <pre id="log"></pre>
     </div>
 
-
-    <h2>Log</h2>
-    <pre id="log"></pre>
-  </div>
-
-  <script>
-    async function refreshStatus() {
-      const res = await fetch("/api/server/status");
-      const data = await res.json();
-      document.getElementById("status").textContent = data.status === 'running' ? "Executando" : "Parado";
-    }
-
-    async function startServer() {
-      const res = await fetch("/api/server/start", { method: "POST" });
-      const data = await res.json();
-      alert(data.message || data.error);
-      refreshStatus();
-      loadLog();
-    }
-
-    async function loadLog() {
-      const res = await fetch("/api/server/logs");
-      const data = await res.json();
-      const logContainer = document.getElementById("log");
-      logContainer.innerHTML = "";
-
-      if (data.log) {
-        const lines = data.log.split("\\n");
-        lines.forEach(line => {
-          const div = document.createElement("div");
-          div.textContent = line;
-          logContainer.appendChild(div);
-        });
-      } else {
-        logContainer.textContent = "Log vazio ou indisponível.";
+    <script>
+      async function refreshStatus() {
+        const res = await fetch("/api/server/status");
+        const data = await res.json();
+        document.getElementById("status").textContent =
+          data.status === "running" ? "Executando" : "Parado";
       }
-    }
 
-    window.onload = () => {
-      refreshStatus();
-      loadLog();
-    };
-  </script>
+      async function startServer() {
+        const res = await fetch("/api/server/start", { method: "POST" });
+        const data = await res.json();
+        alert(data.message || data.error);
+        refreshStatus();
+        loadLog();
+      }
 
-</body>
+      async function stopServer() {
+        const res = await fetch("/api/server/stop", { method: "POST" });
+        const data = await res.json();
+        alert(data.message || data.error);
+        refreshStatus();
+        loadLog();
+      }
 
+      async function loadLog() {
+        const res = await fetch("/api/server/logs");
+        const data = await res.json();
+        const logContainer = document.getElementById("log");
+        logContainer.innerHTML = "";
+
+        if (data.log) {
+          const lines = data.log.split("\\n");
+          lines.forEach((line) => {
+            const div = document.createElement("div");
+            div.textContent = line;
+            logContainer.appendChild(div);
+          });
+        } else {
+          logContainer.textContent = "Log vazio ou indisponível.";
+        }
+      }
+
+      window.onload = () => {
+        refreshStatus();
+        loadLog();
+      };
+    </script>
+  </body>
 </html>

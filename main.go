@@ -60,6 +60,7 @@ func main() {
 	r.POST("/api/logout", logout)
 	r.GET("/api/server/status", authMiddleware(), serverStatus)
 	r.POST("/api/server/start", authMiddleware(), serverStart)
+	r.POST("/api/server/stop", authMiddleware(), serverStop)
 	r.GET("/api/server/logs", authMiddleware(), serverLogs)
 	r.GET("/api/mods", authMiddleware(), listMods)
 	r.POST("/api/mods/upload", authMiddleware(), uploadMod)
@@ -177,6 +178,27 @@ func serverStart(c *gin.Context) {
 		})
 	} else {
 		c.JSON(http.StatusOK, gin.H{"message": "Servidor iniciado e logs sendo gravados em server.log"})
+	}
+}
+
+func serverStop(c *gin.Context) {
+	out, err := exec.Command("bash", "-c", "screen -list | grep mine").Output()
+	if !strings.Contains(string(out), "mine") {
+		c.JSON(http.StatusOK, gin.H{"message": "Servidor já está parado"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao consultar status do servidor"})
+		return
+	}
+
+	err = exec.Command("screen", "-S", "mine", "-X", "quit").Run()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao parar o servidor"})
+		return
+	} else {
+		time.Sleep(2 * time.Second)
+		c.JSON(http.StatusOK, gin.H{"message": "Servidor está sendo desligado"})
 	}
 }
 
