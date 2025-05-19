@@ -16,14 +16,32 @@
     </nav>
 
     <div class="container">
-      <h1>Status do Servidor</h1>
-      <p id="status">Verificando...</p>
-
       <div class="button-group">
-        <button onclick="refreshStatus()">Atualizar Status</button>
-        <button onclick="startServer()">Iniciar Servidor</button>
-        <button onclick="stopServer()">Desligar Servidor</button>
-        <button onclick="loadLog()">Atualizar Logs</button>
+        <button onclick="refreshAll()">Atualizar Dados</button>
+        <button class="success" onclick="startServer()">Iniciar
+          Servidor</button>
+        <button class="error" onclick="stopServer()">Desligar Servidor</button>
+      </div>
+
+      <div class="status-container">
+        <div class="card" id="statusCard">
+          <h3>Status</h3>
+          <p id="status">Verificando...</p>
+        </div>
+        <div class="card" id="difficultyCard">
+          <h3>Dificuldade</h3>
+          <p id="dificuldade">Verificando...</p>
+        </div>
+      </div>
+
+      <div class="difficulty-control">
+        <label for="difficultySelect">Alterar Dificuldade:</label>
+        <select id="difficultySelect">
+          <option value="easy">Fácil</option>
+          <option value="normal">Normal</option>
+          <option value="hard">Difícil</option>
+        </select>
+        <button onclick="setDifficulty()">Alterar</button>
       </div>
 
       <h2>Log</h2>
@@ -32,26 +50,37 @@
 
     <script>
       async function refreshStatus() {
-        const res = await fetch("/api/server/status");
-        const data = await res.json();
-        document.getElementById("status").textContent =
-          data.status === "running" ? "Executando" : "Parado";
+        const resStatus = await fetch("/api/server/status");
+        const dataStatus = await resStatus.json();
+        const statusText = dataStatus.status === "running" ? "Executando" : "Parado";
+        const statusCard = document.getElementById("statusCard");
+        document.getElementById("status").textContent = statusText;
+        statusCard.classList.remove("running", "stopped");
+        statusCard.classList.add(dataStatus.status === "running" ? "running" : "stopped");
       }
 
-      async function startServer() {
-        const res = await fetch("/api/server/start", { method: "POST" });
-        const data = await res.json();
-        alert(data.message || data.error);
-        refreshStatus();
-        loadLog();
-      }
+      async function loadDifficulty() {
+        // Atualiza dificuldade
+        const resDiff = await fetch("/api/server/difficulty");
+        const dataDiff = await resDiff.json();
+        const diff = dataDiff.difficulty || "Desconhecida";
+        const difficultyCard = document.getElementById("difficultyCard");
+        document.getElementById("dificuldade").textContent = diff;
+        document.getElementById("difficultySelect").value = diff.toLowerCase();
 
-      async function stopServer() {
-        const res = await fetch("/api/server/stop", { method: "POST" });
-        const data = await res.json();
-        alert(data.message || data.error);
-        refreshStatus();
-        loadLog();
+
+        difficultyCard.classList.remove("easy", "normal", "hard");
+        switch (diff.toLowerCase()) {
+          case "easy":
+            difficultyCard.classList.add("easy");
+            break;
+          case "normal":
+            difficultyCard.classList.add("normal");
+            break;
+          case "hard":
+            difficultyCard.classList.add("hard");
+            break;
+        }
       }
 
       async function loadLog() {
@@ -72,9 +101,48 @@
         }
       }
 
+      async function refreshAll() {
+        await Promise.all([
+          refreshStatus(),
+          loadDifficulty(),
+          loadLog()
+        ]);
+      }
+
+      async function startServer() {
+        const res = await fetch("/api/server/start", { method: "POST" });
+        const data = await res.json();
+        alert(data.message || data.error);
+        refreshAll();
+      }
+
+      async function stopServer() {
+        const res = await fetch("/api/server/stop", { method: "POST" });
+        const data = await res.json();
+        alert(data.message || data.error);
+        refreshAll();
+      }
+
+      async function setDifficulty() {
+        const value = document.getElementById("difficultySelect").value;
+        const res = await fetch(`/api/command/difficulty`, {
+          method: "POST",
+          body: JSON.stringify({
+            level: value,
+          })
+        });
+
+        const data = await res.json();
+        if (data.message) {
+          alert(`Dificuldade alterada para: ${value}`);
+          refreshAll(); // Recarrega info atualizada
+        } else {
+          alert("Erro ao alterar dificuldade.");
+        }
+      }
+
       window.onload = () => {
-        refreshStatus();
-        loadLog();
+        refreshAll();
       };
     </script>
   </body>

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -62,10 +63,12 @@ func main() {
 	r.POST("/api/server/start", authMiddleware(), serverStart)
 	r.POST("/api/server/stop", authMiddleware(), serverStop)
 	r.GET("/api/server/logs", authMiddleware(), serverLogs)
+	r.GET("/api/server/difficulty", authMiddleware(), getDifficulty)
 	r.GET("/api/mods", authMiddleware(), listMods)
 	r.POST("/api/mods/upload", authMiddleware(), uploadMod)
 	r.POST("/api/mods/disable", authMiddleware(), disableMod)
 	r.POST("/api/command/tp", authMiddleware(), teleportCommand)
+	r.POST("/api/command/difficulty", authMiddleware(), alterDifficulty)
 
 	r.Run(":8080")
 }
@@ -293,4 +296,75 @@ func teleportCommand(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Comando de teleporte executado"})
+}
+
+func alterDifficulty(c *gin.Context) {
+	var req struct {
+		Level string `json:"level"` // "easy", "normal" ou "hard"
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Formato inválido"})
+		return
+	}
+
+	validLevels := map[string]bool{"easy": true, "normal": true, "hard": true}
+	if !validLevels[req.Level] {
+		log.Println("Dificuldade inválida:", req.Level)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Dificuldade inválida"})
+		return
+	}
+
+	log.Println("Alterando dificuldade para:", req.Level)
+
+	// Comando para enviar para o screen
+	cmdStr := fmt.Sprintf("/difficulty %s", req.Level)
+	cmd := exec.Command("screen", "-S", "mine", "-X", "stuff", cmdStr+"\r")
+
+	if err := cmd.Run(); err != nil {
+		log.Println("Erro ao executar comando:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao enviar comando"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Dificuldade alterada para " + req.Level})
+}
+
+func getDifficulty(c *gin.Context) {
+	logPath := filepath.Join(minePath, "server.log")
+
+	// Envia o comando para o Minecraft
+	cmd := exec.Command("screen", "-S", "mine", "-X", "stuff", "/difficulty\r")
+	if err := cmd.Run(); err != nil {
+		log.Println("Erro ao executar comando:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao executar comando"})
+		return
+	}
+
+	// Espera um pouco para o log ser escrito
+	time.Sleep(1 * time.Second)
+
+	// Lê o log
+	content, err := os.ReadFile(logPath)
+	if err != nil {
+		log.Println("Erro ao ler o log:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao ler log"})
+		return
+	}
+
+	// Procura pela linha que contém "The difficulty is "
+	lines := strings.Split(string(content), "\n")
+	for i := len(lines) - 1; i >= 0; i-- {
+		line := lines[i]
+		if strings.Contains(line, "The difficulty is ") {
+			// Exemplo: "...The difficulty is Easy"
+			parts := strings.Split(line, "The difficulty is ")
+			if len(parts) > 1 {
+				difficulty := strings.TrimSpace(parts[1])
+				c.JSON(http.StatusOK, gin.H{"difficulty": difficulty})
+				return
+			}
+		}
+	}
+
+	c.JSON(http.StatusNotFound, gin.H{"error": "Não foi possível encontrar a dificuldade no log"})
 }
