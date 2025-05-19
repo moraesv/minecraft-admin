@@ -99,6 +99,8 @@
         } else {
           logContainer.textContent = "Log vazio ou indisponível.";
         }
+
+        logContainer.scrollTop = logContainer.scrollHeight;
       }
 
       async function refreshAll() {
