@@ -1,6 +1,8 @@
 package main
 
 import (
+	"admin/database"
+	"admin/models"
 	"fmt"
 	"log"
 	"net/http"
@@ -21,6 +23,7 @@ var (
 	minePath  string
 	javaCmd   string
 	jwtSecret []byte
+	db        = database.InitDB()
 )
 
 func main() {
@@ -69,6 +72,9 @@ func main() {
 	r.POST("/api/mods/disable", authMiddleware(), disableMod)
 	r.POST("/api/command/tp", authMiddleware(), teleportCommand)
 	r.POST("/api/command/difficulty", authMiddleware(), alterDifficulty)
+	r.GET("/api/locations", authMiddleware(), listLocations)
+	r.POST("/api/locations", authMiddleware(), createLocation)
+	r.DELETE("/api/locations/:id", authMiddleware(), deleteLocation)
 
 	r.Run(":8080")
 }
@@ -87,7 +93,7 @@ func login(c *gin.Context) {
 	if creds.Username == adminUser && creds.Password == adminPass {
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 			"username": creds.Username,
-			"exp":      time.Now().Add(time.Hour * 1).Unix(),
+			"exp":      time.Now().Add(time.Hour * 12).Unix(),
 		})
 
 		tokenString, err := token.SignedString(jwtSecret)
@@ -97,7 +103,7 @@ func login(c *gin.Context) {
 			return
 		}
 
-		c.SetCookie("token", tokenString, 3600, "/", "", false, true)
+		c.SetCookie("token", tokenString, 12*3600, "/", "", false, true)
 		c.JSON(http.StatusOK, gin.H{"success": true})
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"success": false})
@@ -367,4 +373,36 @@ func getDifficulty(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusNotFound, gin.H{"error": "Não foi possível encontrar a dificuldade no log"})
+}
+
+func listLocations(c *gin.Context) {
+	var locations []models.Location
+	db.Find(&locations)
+	c.JSON(200, locations)
+}
+
+func createLocation(c *gin.Context) {
+	var loc models.Location
+	if err := c.ShouldBindJSON(&loc); err != nil {
+		log.Println("Erro ao vincular JSON:", err)
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	if result := db.Create(&loc); result.Error != nil {
+		c.JSON(500, gin.H{"error": result.Error.Error()})
+		return
+	}
+
+	c.JSON(200, loc)
+}
+
+func deleteLocation(c *gin.Context) {
+	id := c.Param("id")
+	if result := db.Delete(&models.Location{}, id); result.Error != nil {
+		log.Println("Erro ao deletar localização:", result.Error)
+		c.JSON(500, gin.H{"error": result.Error.Error()})
+		return
+	}
+	c.JSON(200, gin.H{"message": "Location deleted"})
 }

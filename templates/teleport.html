@@ -21,18 +21,94 @@
 
     <form id="tpForm">
       <label for="from">Jogador:</label>
-      <input type="text" id="from" name="from" required>
+      <select id="from" name="from" required></select>
 
       <label for="to">Destino:</label>
-      <input type="text" id="to" name="to" required>
+      <select id="to" name="to" required></select>
 
       <button type="submit">Teleportar</button>
     </form>
 
     <p id="result" style="margin-top: 1em;"></p>
+
+    <h2>Localizações Salvas</h2>
+
+    <ul id="locationList" class="list"></ul>
+
+    <h3>Adicionar Nova Localização</h3>
+    <form id="addLocationForm">
+      <input type="text" id="nickname" placeholder="Apelido" required>
+      <input type="text" id="target" placeholder="Nome ou Coordenada" required>
+      <button type="submit">Salvar</button>
+    </form>
   </div>
 
   <script>
+    let locations = [];
+
+    async function loadLocations() {
+      const res = await fetch('/api/locations');
+      locations = await res.json();
+
+      renderLocationList();
+      renderSelectOptions();
+    }
+
+    function renderLocationList() {
+      const list = document.getElementById('locationList');
+      list.innerHTML = '';
+
+      locations.forEach(loc => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <strong>${loc.nickname}</strong> ${loc.target}
+          <button onclick="deleteLocation(${loc.id})">Excluir</button>
+        `;
+        list.appendChild(li);
+      });
+    }
+
+    function renderSelectOptions() {
+      const fromSelect = document.getElementById('from');
+      const toSelect = document.getElementById('to');
+
+      fromSelect.innerHTML = '';
+      toSelect.innerHTML = '';
+
+      locations.forEach(loc => {
+        const optionFrom = document.createElement('option');
+        optionFrom.value = loc.target;
+        optionFrom.textContent = `${loc.nickname} (${loc.target})`;
+
+        const optionTo = document.createElement('option');
+        optionTo.value = loc.target;
+        optionTo.textContent = `${loc.nickname} (${loc.target})`;
+
+        fromSelect.appendChild(optionFrom);
+        toSelect.appendChild(optionTo);
+      });
+    }
+
+    async function deleteLocation(id) {
+      await fetch('/api/locations/' + id, { method: 'DELETE' });
+      loadLocations();
+    }
+
+    document.getElementById('addLocationForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const nickname = document.getElementById('nickname').value;
+      const target = document.getElementById('target').value;
+
+      await fetch('/api/locations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nickname, target })
+      });
+
+      document.getElementById('addLocationForm').reset();
+      loadLocations();
+    });
+
     document.getElementById("tpForm").addEventListener("submit", async function (e) {
       e.preventDefault();
       const from = document.getElementById("from").value;
@@ -40,9 +116,7 @@
 
       const response = await fetch("/api/command/tp", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ from, to })
       });
 
@@ -57,6 +131,8 @@
         result.style.color = "red";
       }
     });
+
+    window.onload = loadLocations;
   </script>
 </body>
 
