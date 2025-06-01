@@ -20,6 +20,24 @@ jobs:
       - name: Build
         run: go build -o minecraft-panel
 
+      - name: Test SSH Connection
+        run: |
+          ssh -o StrictHostKeyChecking=no -i <(echo "${{ secrets.SERVER_KEY }}") ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "echo SSH connection successful"
+
+      - name: Check remote disk and permissions
+        run: |
+          ssh -o StrictHostKeyChecking=no -i <(echo "${{ secrets.SERVER_KEY }}") ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
+          df -h &&
+          ls -ld ~ &&
+          mkdir -p ~/minecraft-panel-deploy-temp && 
+          ls -ld ~/minecraft-panel-deploy-temp
+        "
+
+      - name: Test SCP Upload
+        run: |
+          echo "test" > testfile.txt
+          scp -o StrictHostKeyChecking=no -i <(echo "${{ secrets.SERVER_KEY }}") testfile.txt ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/home/${{ secrets.SERVER_USER }}/
+
       - name: Copy files via SSH
         uses: appleboy/scp-action@v0.1.7
         with:
