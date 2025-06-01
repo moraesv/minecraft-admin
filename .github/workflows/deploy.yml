@@ -39,10 +39,16 @@ jobs:
             # Stop old screen if exists
             screen -S mcpanel -X quit || true
 
-            # Update files
+            # Move o banco antes de deletar
+            mv ~/minecraft-panel/locations.db ~/locations.db.bak || true
+
+            # Atualiza os arquivos
             rm -rf ~/minecraft-panel
             mv ~/minecraft-panel-deploy-temp ~/minecraft-panel
             chmod +x ~/minecraft-panel/minecraft-panel
+
+            # Restaura o banco
+            mv ~/locations.db.bak ~/minecraft-panel/locations.db || true
 
             # Create .env file
             cat <<EOF > ~/minecraft-panel/.env
