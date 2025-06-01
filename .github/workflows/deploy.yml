@@ -31,7 +31,7 @@ jobs:
           ls -ld ~ &&
           mkdir -p ~/minecraft-panel-deploy-temp && 
           ls -ld ~/minecraft-panel-deploy-temp
-        "
+          "
 
       - name: Test SCP Upload
         run: |
