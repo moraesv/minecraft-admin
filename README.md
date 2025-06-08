@@ -1,1 +1,2 @@
-Painel administrativo do servidor de minecraft
+## Painel administrativo do servidor de minecraft
+
