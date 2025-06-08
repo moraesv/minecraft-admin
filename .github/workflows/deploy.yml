@@ -28,6 +28,7 @@ jobs:
           key: ${{ secrets.SERVER_KEY }}
           source: "minecraft-panel,templates,static"
           target: "~/minecraft-panel-deploy-temp"
+          debug: true
 
       - name: Deploy and restart
         uses: appleboy/ssh-action@v1.0.3
