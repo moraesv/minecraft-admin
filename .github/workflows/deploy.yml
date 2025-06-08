@@ -26,7 +26,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_KEY }}
-          source: "minecraft-panel,templates,static"
+          source: "minecraft-panel,templates,static,start-mcpanel.sh"
           target: "~/minecraft-panel-deploy-temp"
 
       - name: Deploy and restart
@@ -36,21 +36,24 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_KEY }}
           script: |
-            # Stop old screen if exists
+            # Para a sessão screen antiga, se existir
             screen -S mcpanel -X quit || true
 
-            # Move o banco antes de deletar
+            # Salva o banco locations.db para não perder dados
             mv ~/minecraft-panel/locations.db ~/locations.db.bak || true
 
-            # Atualiza os arquivos
+            # Remove pasta antiga e substitui pela nova
             rm -rf ~/minecraft-panel
             mv ~/minecraft-panel-deploy-temp ~/minecraft-panel
+
+            # Permissões e script start
             chmod +x ~/minecraft-panel/minecraft-panel
+            chmod +x ~/minecraft-panel/start-mcpanel.sh
 
             # Restaura o banco
             mv ~/locations.db.bak ~/minecraft-panel/locations.db || true
 
-            # Create .env file
+            # Cria o arquivo .env com variáveis secretas
             cat <<EOF > ~/minecraft-panel/.env
             ADMIN_USER=${{ secrets.ADMIN_USER }}
             ADMIN_PASS=${{ secrets.ADMIN_PASS }}
@@ -58,10 +61,10 @@ jobs:
             JAVA_COMMAND=${{ secrets.JAVA_COMMAND }}
             EOF
 
-            # Start new screen session
-            cd ~/minecraft-panel
-            screen -dmS mcpanel ./minecraft-panel
+            # Exporta variável BASE_DIR e roda o script de start
+            export BASE_DIR=~/minecraft-panel
+            bash ~/minecraft-panel/start-mcpanel.sh
 
-            # Wait and check health
+            # Aguarda e faz health check
             sleep 3
             curl -f http://localhost:8080/login || (echo "Health check failed" && exit 1)
