@@ -4,9 +4,6 @@
 # Caminho base do projeto (pode ser passado via variável de ambiente)
 BASE_DIR="${BASE_DIR:-$HOME/minecraft-panel}"
 
-# Fecha a sessão screen se já existir (evita múltiplas sessões)
-screen -S mcpanel -X quit || true
-
 # Navega até o diretório do painel
 cd "$BASE_DIR"
 
